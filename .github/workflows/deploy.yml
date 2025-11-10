@@ -1,29 +1,59 @@
-name: Deploy Vite React App with pnpm to GitHub Pages
+name: Deploy Vite React App with pnpm
 
 on:
   push:
     branches:
-      - main # Or your default branch
+      - main # Trigger the workflow on pushes to the main branch
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v3
-      with:
-        version: 8 # Specify pnpm version
-        run_install: true
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.5.0 # Specify pnpm version
+          run_install: false # Defer install to a later step
 
-    - name: Build project
-      run: pnpm run build
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0 # Specify Node.js version
+          cache: 'pnpm' # Enable pnpm caching for faster builds
 
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist # The directory where Vite outputs the build
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build application
+        run: pnpm build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist' # The directory containing your built application
+
+  deploy:
+    # Add a dependency on the build job
+    needs: build
+
+    # Grant GITHUB_TOKEN the permissions required to deploy to GitHub Pages
+    permissions:
+      pages: write      # Required to create a deployment
+      id-token: write   # Required for OpenID Connect (OIDC) authentication
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    # Specify runner type that is necessary for deployment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 # This action handles the deployment
