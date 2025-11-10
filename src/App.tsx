@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import APIGetWebsite from "./components/APIGetWebsite"
 
 export default function App() {
   const [search, setSearch] = useState('')
@@ -12,7 +13,7 @@ export default function App() {
 
   return (
     <div>
-      website: {website}
+      {website && <APIGetWebsite website={website} />}
     </div>
   )
 }
